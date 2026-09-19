@@ -6,6 +6,9 @@
 
 | Техника | Файл эксперимента | Изменённый файл Практики 1 | Конкретное изменение | Проверка | Что отклонили |
 |---|---|---|---|---|---|
+| Few-shot | [`few_shot/experiment.md`](few_shot/experiment.md) | practices/practice_01/tests_e2e.md | Исправить ожидаемый статус для отсутствующего поля diff на 500 и уточнить evidence/ссылки | Негативный e2e даёт 500 (KeyError); ссылки ведут на prompt_P1_02.md#output | Отклонена гипотеза про 422 |
+| R.C.T.F. | [`rctf/experiment.md`](rctf/experiment.md) |  |  |  |  |
+| Chain of Verification | [`chain_of_verification/experiment.md`](chain_of_verification/experiment.md) |  |  |  |  |
 | Few-shot | [`few_shot/experiment.md`](few_shot/experiment.md) |  |  |  |  |
 | R.C.T.F. | [`rctf/experiment.md`](rctf/experiment.md) | practices/practice_01/tests_load.md | Заменены неопределённые «N/X» на именованные плейсхолдеры с значениями по умолчанию; добавлены сценарии «Дифф больше лимита (413)» и «Базовая нагрузка малыми diff»; расширены метрики до независимых (latency p95/p99, error rate, CPU/RAM); уточнена ссылка на Evidence | Проверили, что пороги конкретизированы и добавлены независимые метрики; исходный формат (заголовок, таблица, раздел AI) сохранён; сценарии связаны с рисками из prompt_P1_02 (риск 2 и 5) | Инструмент-специфичные инструкции (k6/JMeter) и детальная методика профилирования |
 | Chain of Verification | [`chain_of_verification/experiment.md`](chain_of_verification/experiment.md) | practices/practice_01/tests_load.md | Уточнены единицы измерения (KiB/MiB), унифицировано Evidence, привязка сценариев к рискам из prompt_P1_02 | 3 проверочных вопроса, ответы и корректировки зафиксированы в CoV-эксперименте | Отклонены гиперспецифичные указания под конкретный инструмент нагрузки |
