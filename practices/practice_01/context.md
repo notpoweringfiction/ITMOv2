@@ -33,7 +33,7 @@
 ### Хороший пример
 
 
-- POST /api/reviews c корректным JSON {"diff": "..."}; ожидание 200 и поля comment
+- POST /api/reviews с корректным JSON {"diff": "..."}; ожидание 200 и поля comment
 
 ### Плохой пример
 
