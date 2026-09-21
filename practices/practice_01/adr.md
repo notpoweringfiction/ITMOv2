@@ -48,7 +48,7 @@
 
 ```mermaid
 flowchart LR
-    Input[Вход (diff)] --> API[API: POST /api/reviews]
+    Input[Вход diff] --> API[API: POST /api/reviews]
     API --> VAL[Валидация и лимиты]
     VAL --> SVC[ReviewService]
     SVC --> LLM[LLM]
