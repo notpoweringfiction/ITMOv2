@@ -2,6 +2,7 @@
 
 | Сценарий пользователя | Предусловия | Действие | Наблюдаемый результат | Evidence |
 |---|---|---|---|---|
+<<<<<<< Updated upstream
 | Позитивный | Доступен /api/reviews | POST { diff: "..." } | 200 OK и ReviewResponse { comment } | см. prompt_P1_02.md#output (summary/checks) |
 | Негативный | Нет поля diff | POST {} | 500 Internal Server Error (KeyError) | см. prompt_P1_02.md#output checks (Risk 1): KeyError подтверждает отсутствие валидации поля diff |
 | Граничный | Превышение лимита | POST с большим diff | Рост латентности или сбой (напр., таймаут/500) | см. prompt_P1_02.md#output checks (Risk 2): отсутствие ограничений на размер/таймауты |
@@ -10,3 +11,16 @@
 
 - Строка в [`prompts.md`](prompts.md):
 - Что проверили и исправили сами:
+=======
+| Позитивный | Доступен /api/reviews | POST { diff: "..." } | 200 OK и ReviewResponse { comment } | prompt_P1_02 summary/checks |
+| Негативный | Нет поля diff | POST {} | 422 | prompt_P1_02 checks Risk 1 |
+| Граничный | Превышение лимита | POST с большим diff | 413 | prompt_P1_02 checks Risk 2 (часть про большой diff) |
+| Сбой LLM | Доступен /api/reviews; LLM возвращает исключение (мок) | POST { diff: "..." } | 502/503 и тело с описанием ошибки | prompt_P1_01 п.4; prompt_P1_02 checks Risk 2 |
+
+## Как использовали AI
+
+- Для чего: сопоставить пользовательские e2e-сценарии с выявленными рисками и чек-листами
+- Тип промпта: AI-reviewer с summary+risks+evidence+checks (prompt_P1_02) и детальные находки (prompt_P1_01)
+- Строка в [`prompts.md`](prompts.md): см. practices/practice_01/prompt_P1_02.md и practices/practice_01/prompt_P1_01.md
+- Что проверили и исправили сами: добавили сценарий сбоя LLM (5xx) и замапили риски на статусы 422/413/5xx с уточнением ожидаемых результатов
+>>>>>>> Stashed changes
