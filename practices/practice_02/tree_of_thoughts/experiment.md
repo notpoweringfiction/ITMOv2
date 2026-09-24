@@ -11,7 +11,7 @@
 
 На основе prompt_P1_01 и prompt_P1_02 оценить артефакты practice_01 и найти самый ненадёжный среди: adr.md, analysis.md, context.md, problem.md, product_management.md, project_management.md, tests_e2e.md, tests_integration.md, tests_load.md, tests_unit.md. Самым ненадёжным признан tests_load.md из-за расплывчатых «N», «X» и произвольных размеров, не привязанных к контракту (MAX_DIFF_LEN) и целям (SLA).
 
-## Внешне описанные альтернативы
+## Варианты решения
 
 | Альтернатива | Плюсы | Минусы | Оценка по критериям |
 |---|---|---|---|
