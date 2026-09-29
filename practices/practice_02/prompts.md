@@ -3,14 +3,17 @@
 Файл ведёт OpenCode по вашим запросам. Агент записывает фактические результаты экспериментов и вносит изменения в связанные файлы. Свою оценку сообщайте ему в чате; вручную заполнять шаблон не нужно.
 
 - Выбранный слабый артефакт Практики 1:
+- practices/practice_01/tests_load.md
 - Что в нём нужно улучшить:
+- Убрать неопределённые заглушки (p95 ≤ N, X ошибок), соотнести сценарий с решениями ADR/TO BE и зафиксировать критерий включения нагрузочных тестов позже.
 - Как поймём, что изменение полезно:
+- Согласованность с источниками Практики 1 (ADR, analysis, context, problem, tests_*), наличие проверяемых формулировок (413 при превышении, покрытие рисков через e2e/integration), отсутствие неподтверждённых числовых целей.
 
 | Техника | Файл эксперимента | Изменённый файл Практики 1 | Конкретное изменение | Проверка | Что отклонили |
 |---|---|---|---|---|---|
-| Few-shot | [`few_shot/experiment.md`](few_shot/experiment.md) |  |  |  |  |
-| R.C.T.F. | [`rctf/experiment.md`](rctf/experiment.md) |  |  |  |  |
-| Chain of Verification | [`chain_of_verification/experiment.md`](chain_of_verification/experiment.md) |  |  |  |  |
-| Tree of Thoughts | [`tree_of_thoughts/experiment.md`](tree_of_thoughts/experiment.md) |  |  |  |  |
-| RAG | [`rag/experiment.md`](rag/experiment.md) |  |  |  |  |
-| ReAct | [`react/experiment.md`](react/experiment.md) |  |  |  |  |
+| Few-shot | [`few_shot/experiment.md`](few_shot/experiment.md) | practices/practice_01/tests_e2e.md | Исправить ожидаемый статус для отсутствующего поля diff на 500 и уточнить evidence/ссылки | Негативный e2e даёт 500 (KeyError); ссылки ведут на prompt_P1_02.md#output | Отклонена гипотеза про 422 |
+| R.C.T.F. | [`rctf/experiment.md`](rctf/experiment.md) | practices/practice_01/tests_load.md | Заменены неопределённые «N/X» на именованные плейсхолдеры с значениями по умолчанию; добавлены сценарии «Дифф больше лимита (413)» и «Базовая нагрузка малыми diff»; расширены метрики до независимых (latency p95/p99, error rate, CPU/RAM); уточнена ссылка на Evidence | Проверили, что пороги конкретизированы и добавлены независимые метрики; исходный формат (заголовок, таблица, раздел AI) сохранён; сценарии связаны с рисками из prompt_P1_02 (риск 2 и 5) | Инструмент-специфичные инструкции (k6/JMeter) и детальная методика профилирования |
+| Chain of Verification | [`chain_of_verification/experiment.md`](chain_of_verification/experiment.md) | practices/practice_01/tests_load.md | Уточнены единицы измерения (KiB/MiB), унифицировано Evidence, привязка сценариев к рискам из prompt_P1_02 | 3 проверочных вопроса, ответы и корректировки зафиксированы в CoV-эксперименте | Отклонены гиперспецифичные указания под конкретный инструмент нагрузки |
+| Tree of Thoughts | [`tree_of_thoughts/experiment.md`](tree_of_thoughts/experiment.md) | practices/practice_01/tests_load.md | Расплывчатые «N»/«X» и произвольные размеры заменены на параметризованные сценарии; добавлены явные параметры (MAX_DIFF_LEN, RPS_BASELINE, DURATION_S, SLA_P95_MS, SLA_P95_MS_413, ERROR_RATE_MAX_PERCENT) и проходимые критерии; привязка к контракту (MAX_DIFF_LEN → 413) и SLA | Задать параметры на стенде, выполнить сценарии; ожидать p95 ≤ SLA при отсутствии неожиданных 5xx, а при 1.1×MAX_DIFF_LEN — доминирование 413 и стабильное p95 | Жёстко прошитые числа без переносимости между окружениями; исследовательский стресс-тест без проходимых критериев |
+| RAG | [`rag/experiment.md`](rag/experiment.md) | practices/practice_01/tests_load.md | Уточнили предел: «контролируемая производительность при введённом max_len; 413 при превышении», добавили раздел об откладывании нагрузочных тестов и критерий включения | Кросс-ссылки на ADR (лимит и 413), analysis (TO BE), context (неизвестен max размер), problem (метрика p95 после лимитов), e2e/integration | Отклонены конкретные числовые пороги p95 и max_len из-за отсутствия в источниках; auth/rate limit вынесены за рамки инкремента |
+| ReAct | [`react/experiment.md`](react/experiment.md) | practices/practice_01/tests_e2e.md | Добавлен e2e-кейс на сбой LLM → 502/503 | Наличие сценария 5xx; согласованность с integration.md и промптами P1-01/02 | Отклонены правки в другие файлы без необходимости |
