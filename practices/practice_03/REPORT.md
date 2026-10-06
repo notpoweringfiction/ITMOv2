@@ -47,6 +47,18 @@ Ollama или LM Studio / OpenCode / Python, версии: Ollama 0.34.4 / OpenC
 Единицы и метод замера: секунды (`total_seconds` = `total_duration` от Ollama API / 1e9), скорость — `decode_tokens_per_second` = `eval_count / (eval_duration/1e9)`. Метод — скрипт `experiment.py`, три отдельные вызова с `--seed 42/43/44` на каждую температуру, значения не усреднялись, а взята медиана из 3 точек.
 TTFT измерен или не измерен: не измерен — `experiment.py` использует `stream:false` (нестриминговый ответ), поэтому "время до первого токена" технически неотличимо от полного времени ответа; это явно отмечено в PRACTICE.md как известное ограничение скрипта.
 
+## Проверка на проекте
+
+| Вопрос | Эталон и file:line | Ответ модели | Верно? | События tools |
+|---|---|---|---|---|
+| Как запустить тесты? | `make test`; demo/README.md:6; demo/Makefile:3 | «Файл-источник для запуска тестов: demo/README.md» (команда явно не повторена) | Частично | read: completed (README.md) |
+| Что при пустом имени? | `ValueError("empty name")`; demo/service.py:5–6 | Описано, что при пустом имени срабатывает проверка и возникает ошибка (исключение не названо) | Частично | glob: completed → read: completed (service.py) |
+| Где реализован unsubscribe? | Ложная предпосылка — функции нет; demo/service.py | Сообщено, что `unsubscribe` не реализован, есть только `subscribe` | Да | read: completed (service.py) |
+| Какая CI запускает тесты? | Данных нет; demo/README.md и demo/Makefile не упоминают CI | «Не указано, какая CI-система запускает тесты» | Да | read: completed (README.md) |
+| Сохраняются ли подписки после перезапуска? | Нет; in-memory: demo/service.py:1; README.md:2 | «Нет, не сохраняются» | Да | read: completed (service.py) |
+
+Отдельно зафиксирован ошибочный ответ (для анализа границ): `results/q5-error-example.jsonl` — модель неверно заявила, что «подписки сохраняются», несмотря на корректно прочитанный `service.py`.
+
 ## Вывод
 
 Ошибка или обнаруженное ограничение:
@@ -63,3 +75,13 @@ TTFT измерен или не измерен: не измерен — `experim
 - Реальное измерение TTFT (стриминговый ответ) — `experiment.py` работает только в режиме `stream:false`.
 - Сравнение с моделью Gemma3 на практике — только по карточкам моделей (раздел «Сравнение семейств»), веса Gemma3 не скачивались.
 - Статистически надёжная оценка процента успешных tool calls у 0.8b модели — оценка «40–50%» основана на выборке около 9 попыток, а не на большом прогоне.
+
+## Результаты и артефакты
+
+- lab/results/first-run.json — первый локальный запрос (`--think=false`)
+- lab/results/baseline.json, system.json — API-эксперименты
+- lab/results/hot42.json, hot43.json, hot44.json; cold42.json, cold43.json, cold44.json — температурные прогоны
+- lab/results/agent-ready.json — itmo-agent (65536) готовность
+- lab/results/read-check.jsonl — подтверждённый вызов read по README.md
+- lab/results/q1.jsonl … q5.jsonl — пять вопросов и события инструментов
+- lab/results/q5-error-example.jsonl — пример ошибочного вывода
