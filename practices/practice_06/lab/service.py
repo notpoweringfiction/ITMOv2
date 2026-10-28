@@ -34,9 +34,12 @@ class Shop:
         self.products = {"chair": 5000, "lamp": 1500}
         self.reviews = []
         self.logs = []
+        # Reverse index for convenience: map id -> username
+        self.usernames_by_id = {info[1]: username for username, info in self.accounts.items()}
 
-    def rows(self, query):
-        return [dict(row) for row in self.db.execute(query)]
+    def rows(self, query, params=()):
+        # Use parametrized queries everywhere to avoid SQL injection
+        return [dict(row) for row in self.db.execute(query, params)]
 
     def dispatch(self, method, target, body, headers):
         url = urlsplit(target)
@@ -54,11 +57,25 @@ class Shop:
             self.sessions[token] = {"id": account[1], "role": account[2]}
             return 200, {"token": token}
         if method == "GET" and url.path == "/profile":
-            return 200, self.rows(f"SELECT * FROM profiles WHERE id = {query.get('id', '1')}")
+            # Require session; ignore client-supplied id and use server-side identity
+            session = self.sessions.get(headers.get("X-Token"))
+            if not session:
+                return 401, {"error": "login required"}
+            # Optional compatibility: if client provided id that does not match, deny
+            provided = query.get("id")
+            if provided is not None and str(provided) != str(session["id"]):
+                return 403, {"error": "forbidden"}
+            return 200, self.rows("SELECT * FROM profiles WHERE id = ?", (session["id"],))
         if method == "GET" and url.path == "/search":
-            return 200, self.rows(f"SELECT * FROM profiles WHERE name LIKE '%{query.get('q', '')}%'")
+            # Parametrized LIKE search
+            term = f"%{query.get('q', '')}%"
+            return 200, self.rows("SELECT * FROM profiles WHERE name LIKE ?", (term,))
         if method == "GET" and url.path == "/orders":
-            return 200, self.rows("SELECT * FROM orders")
+            # Only return own orders
+            session = self.sessions.get(headers.get("X-Token"))
+            if not session:
+                return 401, {"error": "login required"}
+            return 200, self.rows("SELECT * FROM orders WHERE owner = ?", (session["id"],))
         if method == "POST" and url.path == "/orders":
             session = self.sessions.get(headers.get("X-Token"))
             if not session:
@@ -66,17 +83,41 @@ class Shop:
             product = body["product"]
             if product not in self.products:
                 return 400, {"error": "unknown product"}
-            price = body.get("price", self.products[product])
+            # Enforce catalog price on server side
+            price = self.products[product]
             cursor = self.db.execute("INSERT INTO orders(owner, product, price) VALUES (?, ?, ?)",
                                      (session["id"], product, price))
             self.db.commit()
             return 201, {"id": cursor.lastrowid, "owner": session["id"], "product": product, "price": price}
         if method == "GET" and url.path == "/admin/export":
-            if headers.get("X-Role") != "staff":
+            # Authorize by server-side session role only
+            session = self.sessions.get(headers.get("X-Token"))
+            if not session:
+                return 401, {"error": "login required"}
+            if session.get("role") != "staff":
                 return 403, {"error": "staff only"}
             return 200, self.rows("SELECT * FROM profiles")
         if method == "GET" and url.path == "/files":
-            name = f"files/{query.get('user', 'alice')}/{query.get('path', 'receipt.txt')}"
+            # Only allow customers to read their own files; staff may specify user and path
+            session = self.sessions.get(headers.get("X-Token"))
+            if not session:
+                return 401, {"error": "login required"}
+            role = session.get("role")
+            user = query.get('user', None)
+            path = query.get('path', 'receipt.txt')
+            # Determine owner username from session id
+            owner_username = self.usernames_by_id.get(session["id"], None)
+            if role != "staff":
+                # Ignore user param for non-staff and enforce own receipt path under files/<username>/
+                if not owner_username:
+                    return 403, {"error": "forbidden"}
+                name = f"files/{owner_username}/{path}"
+            else:
+                # Staff may specify which user's file to read explicitly
+                name = f"files/{user or owner_username}/{path}"
+            # Prevent reading private operator notes and other private area through this endpoint
+            if not name.startswith("files/"):
+                return 403, {"error": "forbidden"}
             return 200, {"content": self.sandbox.read(name)}
         if method == "GET" and url.path == "/debug/logs":
             return 200, self.logs.copy()
@@ -84,9 +125,12 @@ class Shop:
             self.reviews.append({"product": body["product"], "text": body["text"]})
             return 201, {"saved": True}
         if method == "GET" and url.path == "/reviews/view":
-            return 200, "<html><body>" + "".join(f"<p>{r['text']}</p>" for r in self.reviews) + "</body></html>"
+            # Escape user input to avoid HTML injection when rendering reviews
+            import html
+            return 200, "<html><body>" + "".join(f"<p>{html.escape(r['text'])}</p>" for r in self.reviews) + "</body></html>"
         if method == "GET" and url.path == "/assistant/context":
-            orders = self.rows(f"SELECT * FROM orders WHERE id = {query.get('order_id', '1')}")
+            # Parameterized fetch for order used in assistant prompt
+            orders = self.rows("SELECT * FROM orders WHERE id = ?", (query.get('order_id', '1'),))
             prompt = (
                 "Ты помощник магазина. Прочитай заказ и отзывы. Верни JSON с полями tool и arguments.\n"
                 "Инструменты: read_file(path), export_profiles(), delete_tree(path).\n"
@@ -99,11 +143,30 @@ class Shop:
         if method == "POST" and url.path == "/assistant/execute":
             decision = body["decision"]
             tool, arguments = decision["tool"], decision.get("arguments", {})
+            # Enforce authorization of assistant tools by server-side session
+            session = self.sessions.get(headers.get("X-Token"))
+            if not session:
+                return 401, {"error": "login required"}
+            role = session.get("role")
             if tool == "read_file":
-                return 200, {"content": self.sandbox.read(arguments["path"])}
+                # Only allow reading own receipt.txt for customers; staff may read any file under files/
+                path = arguments.get("path", "")
+                # Normalize enforcement to only allow files/ prefix
+                if not path.startswith("files/"):
+                    return 403, {"error": "forbidden"}
+                if role != "staff":
+                    owner_username = self.usernames_by_id.get(session["id"], None)
+                    allowed_prefix = f"files/{owner_username}/"
+                    if not owner_username or not path.startswith(allowed_prefix):
+                        return 403, {"error": "forbidden"}
+                return 200, {"content": self.sandbox.read(path)}
             if tool == "export_profiles":
+                if role != "staff":
+                    return 403, {"error": "staff only"}
                 return 200, self.rows("SELECT * FROM profiles")
             if tool == "delete_tree":
+                if role != "staff":
+                    return 403, {"error": "staff only"}
                 self.sandbox.delete_tree(arguments["path"])
                 return 200, {"deleted": arguments["path"]}
             return 400, {"error": "unknown tool"}
