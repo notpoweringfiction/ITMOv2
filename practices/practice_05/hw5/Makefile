@@ -1,9 +1,12 @@
 .PHONY: test unit e2e
 
+PYTHON ?= python3
+PROJ_ROOT := $(abspath $(CURDIR)/../../..)
+
 unit:
-	python -m unittest -v practices.practice_05.hw5.tests.test_logic
+	PYTHONPATH=$(PROJ_ROOT) $(PYTHON) -m unittest -v practices.practice_05.hw5.tests.test_logic
 
 e2e:
-	python -m unittest -v practices.practice_05.hw5.tests.test_cli
+	PYTHONPATH=$(PROJ_ROOT) $(PYTHON) -m unittest -v practices.practice_05.hw5.tests.test_cli
 
 test: unit e2e
