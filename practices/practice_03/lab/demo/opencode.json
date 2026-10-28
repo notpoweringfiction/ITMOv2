@@ -1,8 +1,8 @@
+<<<<<<< Updated upstream
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "ollama/itmo-agent",
   "small_model": "ollama/itmo-agent",
-  "enabled_providers": ["ollama"],
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -16,9 +16,6 @@
           "limit": {
             "context": 65536,
             "output": 4096
-          },
-          "options": {
-            "reasoningEffort": "none"
           }
         }
       }
@@ -40,3 +37,63 @@
   }
 }
 
+=======
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "ollama/itmo-agent",
+  "small_model": "ollama/itmo-agent",
+  "enabled_providers": ["ollama"],
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama local",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+<<<<<<< Updated upstream
+      "models": {
+        "itmo-agent": {
+          "name": "ITMO local 64k",
+          "limit": {
+            "context": 65536,
+            "output": 4096
+          },
+          "options": {
+            "reasoningEffort": "none"
+=======
+        "models": {
+          "itmo-agent": {
+            "name": "ITMO local 64k",
+            "limit": {
+              "context": 65536,
+              "output": 4096
+            },
+            "options": {
+              "reasoningEffort": "none",
+              "reasoning_effort": "none",
+              "temperature": 0,
+              "max_tokens": 32,
+              "maxTokens": 32,
+              "seed": 42
+            }
+>>>>>>> Stashed changes
+          }
+        }
+    }
+  },
+  "agent": {
+    "local-guide": {
+      "description": "Read-only local repository assistant",
+      "mode": "primary",
+      "prompt": "{file:./repo-system.txt}",
+      "steps": 8,
+      "permission": {
+        "*": "deny",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    }
+  }
+}
+>>>>>>> Stashed changes

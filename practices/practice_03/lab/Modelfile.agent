@@ -1,4 +1,11 @@
+<<<<<<< Updated upstream
 FROM qwen3.5:0.8b
 PARAMETER num_ctx 65536
 PARAMETER temperature 0.2
 
+=======
+FROM qwen3.5:4b
+PARAMETER num_ctx 65536
+PARAMETER temperature 0.2
+
+>>>>>>> Stashed changes
